@@ -1,0 +1,9 @@
+build/
+debug.log
+sdkconfig
+sdkconfig.old
+
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
