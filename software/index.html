@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>Sample page</title>
+    </head>
+    <body>
+        <i>DAC value:</i>
+        <p id='dac_value'></p>
+        <i>ADC value:</i>
+        <p id='adc_value'></p>
+        <input value='Update' onclick='updateValue("dac_value");updateValue("adc_value");', type='button'>
+    </body>
+</html>
+
+<script type='text/javascript'>
+    function updateValue(request) {
+        fetch('./' + request).then(response => response.text())
+                                   .then(x => document.getElementById(request).innerText = x);
+    }
+
+    setInterval(() => { updateValue('dac_value'); updateValue('adc_value')}, 1000);
+</script>
