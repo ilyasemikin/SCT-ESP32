@@ -3,6 +3,8 @@ debug.log
 sdkconfig
 sdkconfig.old
 
+spiffs_image/
+
 .vscode/*
 !.vscode/launch.json
 !.vscode/settings.json

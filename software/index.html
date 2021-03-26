@@ -1,21 +1,16 @@
 <html>
     <head>
-        <title>Sample page</title>
+        <title>Graph page</title>
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <i>DAC value:</i>
-        <p id='dac_value'></p>
-        <i>ADC value:</i>
-        <p id='adc_value'></p>
-        <input value='Update' onclick='updateValue("dac_value");updateValue("adc_value");', type='button'>
+        <div id="graph-container">
+            <h1>Graph</h1>
+            <canvas width="500" height="500" id="graph"></canvas>
+            <p><input type="button" value="update" id="update_btn"></input></p>
+        </div>
     </body>
+
+    <script type="text/javascript" src="graph.js"></script>
+    <script type="text/javascript" src="points.js"></script>
 </html>
-
-<script type='text/javascript'>
-    function updateValue(request) {
-        fetch('./' + request).then(response => response.text())
-                                   .then(x => document.getElementById(request).innerText = x);
-    }
-
-    setInterval(() => { updateValue('dac_value'); updateValue('adc_value')}, 1000);
-</script>
