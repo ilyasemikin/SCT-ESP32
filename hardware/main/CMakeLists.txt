@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "main.c"
+    SRCS "filesystem.c" "list.c" "main.c" "metering.c" "wifi.c" "webserver.c"
     INCLUDE_DIRS ""
 )
 
