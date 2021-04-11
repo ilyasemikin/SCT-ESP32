@@ -5,13 +5,14 @@
 
 #include <cJSON.h>
 
+#include "config.h"
 #include "filesystem.h"
 #include "list.h"
 #include "metering.h"
 
 static httpd_handle_t server = NULL;
 
-esp_err_t get_page_handler(httpd_req_t *req);
+esp_err_t get_file_handler(httpd_req_t *req);
 esp_err_t get_metering_handler(httpd_req_t *req);
 
 const static httpd_uri_t metering_get = {
@@ -24,7 +25,7 @@ const static httpd_uri_t metering_get = {
 const static httpd_uri_t main_page_get = {
     .uri = "/",
     .method = HTTP_GET,
-    .handler = get_page_handler,
+    .handler = get_file_handler,
     .user_ctx = "/spiffs/index.html"
 };
 
@@ -42,18 +43,45 @@ void webserver_start(void) {
     }
 }
 
-esp_err_t get_page_handler(httpd_req_t *req) {
-    char *post_str = read_whole_file(req->user_ctx);
+esp_err_t get_file_handler(httpd_req_t *req) {
+    FILE *fd = fopen(req->user_ctx, "r");
+    if (fd == NULL) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
+        return ESP_FAIL;
+    }
 
-    httpd_resp_send(req, post_str, strlen(post_str));
+    char *chunk = (char *)malloc(sizeof(char) * SCRATCH_BUFSIZE);
+    size_t chunksize;
+    do {
+        chunksize = fread(chunk, 1, SCRATCH_BUFSIZE, fd);
 
-    free(post_str);
+        if (chunksize > 0) {
+            if (httpd_resp_send_chunk(req, chunk, chunksize) != ESP_OK) {
+                fclose(fd);
+                httpd_resp_sendstr_chunk(req, NULL);
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+                return ESP_FAIL;
+            }
+        }
+    } while (chunksize != 0);
+
+    fclose(fd);
+    httpd_resp_send_chunk(req, NULL, 0);
 
     return ESP_OK;
 }
 
 esp_err_t get_metering_handler(httpd_req_t *req) {
     cJSON *array = cJSON_CreateArray();
+
+    char buf[128];
+    esp_err_t err = httpd_req_get_url_query_str(req, buf, sizeof(buf) / sizeof(char));
+    if (err == ESP_ERR_HTTPD_RESULT_TRUNC) {
+        printf("empty\n");
+    }
+    else if (err == ESP_OK) {
+        printf("%s\n", buf);
+    }
 
     for (uint16_t i = 1; i < 250; i += 10) {
         cJSON *object = get_metering_json_object(get_metering(i));
@@ -77,7 +105,7 @@ void webserver_init_spiffs_files(void) {
 
     httpd_uri_t uri = {
         .method = HTTP_GET,
-        .handler = get_page_handler
+        .handler = get_file_handler
     };
 
     while (cur != NULL) {

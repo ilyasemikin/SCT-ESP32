@@ -13,4 +13,8 @@
 
 #define DEFAULT_RESISTOR_OM 41500
 
+#define MAX_FILES_AMOUNT 10
+
+#define SCRATCH_BUFSIZE 8192
+
 #endif

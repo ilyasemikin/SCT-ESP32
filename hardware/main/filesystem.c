@@ -57,20 +57,3 @@ struct list *spiffs_list_files(void) {
 
     return list;
 }
-
-char *read_whole_file(char *path) {
-    FILE *file = fopen(path, "r");
-    long length;
-
-    fseek(file, 0, SEEK_END);
-    length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    char *str = (char *)malloc(length + 1);
-    fread(str, 1, length, file);
-    str[length] = '\0';
-
-    fclose(file);
-
-    return str;
-}

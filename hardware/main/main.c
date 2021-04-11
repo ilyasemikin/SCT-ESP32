@@ -33,7 +33,7 @@ void app_main(void) {
     
     wifi_softap_init();
 
-    spiffs_init(5);
+    spiffs_init(MAX_FILES_AMOUNT);
 
     vTaskDelay(10);
 
