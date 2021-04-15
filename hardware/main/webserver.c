@@ -84,7 +84,7 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
     }
 
     for (uint16_t i = 1; i < 250; i += 10) {
-        cJSON *object = get_metering_json_object(get_metering(i));
+        cJSON *object = get_metering_json_object(get_metering(1, 2, i));
         cJSON_AddItemToArray(array, object);
     }
 
