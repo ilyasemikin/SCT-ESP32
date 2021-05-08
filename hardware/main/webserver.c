@@ -1,5 +1,7 @@
 #include "webserver.h"
 
+#include <stdbool.h>
+
 #include <esp_http_server.h>
 #include <esp_log.h>
 
@@ -12,13 +14,24 @@
 
 static httpd_handle_t server = NULL;
 
-esp_err_t get_file_handler(httpd_req_t *req);
-esp_err_t get_metering_handler(httpd_req_t *req);
+// static functions definition
+static void webserver_init_spiffs_files(void);
+// handlers definition
+static esp_err_t get_file_handler(httpd_req_t *req);
+static esp_err_t get_metering_handler(httpd_req_t *req);
+static esp_err_t get_channel_test(httpd_req_t *req);
 
 const static httpd_uri_t metering_get = {
     .uri = "/metering",
     .method = HTTP_GET,
     .handler = get_metering_handler,
+    .user_ctx = NULL
+};
+
+const static httpd_uri_t channel_test_get = {
+    .uri = "/channel_test",
+    .method = HTTP_GET,
+    .handler = get_channel_test,
     .user_ctx = NULL
 };
 
@@ -29,10 +42,9 @@ const static httpd_uri_t main_page_get = {
     .user_ctx = "/spiffs/index.html"
 };
 
-void webserver_init_spiffs_files(void);
-
 void webserver_start(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    // TODO: избавиться от константы
     config.max_uri_handlers = 10;
 
     if (httpd_start(&server, &config) == ESP_OK) {
@@ -40,8 +52,33 @@ void webserver_start(void) {
 
         ESP_ERROR_CHECK(httpd_register_uri_handler(server, &metering_get));
         ESP_ERROR_CHECK(httpd_register_uri_handler(server, &main_page_get));
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &channel_test_get));
     }
 }
+
+// static functions implementation
+
+void webserver_init_spiffs_files(void) {
+    struct list *list = spiffs_list_files();
+    struct list_node *cur = list->head;
+
+    httpd_uri_t uri = {
+        .method = HTTP_GET,
+        .handler = get_file_handler
+    };
+
+    while (cur != NULL) {
+        uri.user_ctx = (char *)cur->data;
+        uri.uri = (char *)cur->data + 7;
+
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
+
+        cur = cur->next;
+    }
+    list_free(list);
+}
+
+// handlers implementation
 
 esp_err_t get_file_handler(httpd_req_t *req) {
     FILE *fd = fopen(req->user_ctx, "r");
@@ -72,19 +109,54 @@ esp_err_t get_file_handler(httpd_req_t *req) {
 }
 
 esp_err_t get_metering_handler(httpd_req_t *req) {
+    uint8_t channel_in = 2;
+    uint8_t channel_out = 1;
+    char *ptr;
+    double from = 0;
+    double to = 3;
+    char param[128];
+    if (httpd_req_get_url_query_str(req, param, sizeof(param) / sizeof(char)) == ESP_OK) {
+        char buf[16];
+        const size_t buf_len = sizeof(buf) / sizeof(char);
+        if (httpd_query_key_value(param, "in", buf, buf_len) == ESP_OK) {
+            channel_in = atoi(buf);
+        }
+
+        if (httpd_query_key_value(param, "out", buf, buf_len) == ESP_OK) {
+            channel_out = atoi(buf);
+        }
+
+        if (httpd_query_key_value(param, "from", buf, buf_len) == ESP_OK) {
+            from = strtod(buf, &ptr);
+        }
+
+        if (httpd_query_key_value(param, "to", buf, buf_len) == ESP_OK) {
+            to = strtod(buf, &ptr);
+        }
+    }
+    else {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    int16_t dac_from = get_dac_raw(from);
+    int16_t dac_to = get_dac_raw(to);
+
+    printf("%d %d\n", dac_from, dac_to);
+
     cJSON *array = cJSON_CreateArray();
+    struct metering metering;
+    for (int16_t value = dac_from; value < dac_to; value += 10) {
+        if (value >= 0) {
+            metering = get_metering(channel_out, channel_in, (uint8_t)value);
+        }
+        else {
+            metering = get_metering(channel_in, channel_out, (uint8_t)-value);
+            metering.volt = -metering.volt;
+            metering.ampere = -metering.ampere;
+        }
 
-    char buf[128];
-    esp_err_t err = httpd_req_get_url_query_str(req, buf, sizeof(buf) / sizeof(char));
-    if (err == ESP_ERR_HTTPD_RESULT_TRUNC) {
-        printf("empty\n");
-    }
-    else if (err == ESP_OK) {
-        printf("%s\n", buf);
-    }
-
-    for (uint16_t i = 1; i < 250; i += 10) {
-        cJSON *object = get_metering_json_object(get_metering(1, 2, i));
+        cJSON *object = get_metering_json_object(metering);
         cJSON_AddItemToArray(array, object);
     }
 
@@ -99,22 +171,55 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-void webserver_init_spiffs_files(void) {
-    struct list *list = spiffs_list_files();
-    struct list_node *cur = list->head;
+esp_err_t get_channel_test(httpd_req_t *req) {
+    char buf[16];
+    const size_t buf_len = sizeof(buf) / sizeof(char);
+    char param[128];
 
-    httpd_uri_t uri = {
-        .method = HTTP_GET,
-        .handler = get_file_handler
-    };
+    bool correct = true;
+    uint8_t channel_raise = 1;
+    uint8_t channel_metering = 1;
+    uint8_t value = 255;
 
-    while (cur != NULL) {
-        uri.user_ctx = (char *)cur->data;
-        uri.uri = (char *)cur->data + 7;
-
-        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
-
-        cur = cur->next;
+    if (httpd_req_get_url_query_str(req, param, sizeof(param) / sizeof(char)) == ESP_OK) {
+        if (httpd_query_key_value(param, "raise", buf, buf_len) == ESP_OK) {
+            channel_raise = (uint8_t)atoi(buf);
+        }
+        if (httpd_query_key_value(param, "in", buf, buf_len) == ESP_OK) {
+            channel_metering = (uint8_t)atoi(buf);
+        }
+        if (httpd_query_key_value(param, "value", buf, buf_len) == ESP_OK) {
+            value = (uint8_t)atoi(buf);
+        }
     }
-    list_free(list);
+
+    if (!correct) {
+        return ESP_FAIL;
+    }
+
+    struct metering metering = get_metering(channel_raise, channel_metering, value);
+
+    cJSON *object = cJSON_CreateObject();
+
+    cJSON *ampere = cJSON_CreateNumber(metering.ampere);
+    cJSON *volt = cJSON_CreateNumber(metering.volt);
+    cJSON *met_volt = cJSON_CreateNumber(metering.metering_volt);
+    cJSON *raise_ch = cJSON_CreateNumber(channel_raise);
+    cJSON *input_ch = cJSON_CreateNumber(channel_metering);
+
+    cJSON_AddItemToObject(object, "channel_raise", raise_ch);
+    cJSON_AddItemToObject(object, "channel_metering", input_ch);
+    cJSON_AddItemToObject(object, "volt", volt);
+    cJSON_AddItemToObject(object, "metering_volt", met_volt);
+    cJSON_AddItemToObject(object, "ampere", ampere);
+
+    char *post_str = cJSON_Print(object);
+    cJSON_Delete(object);
+
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_send(req, post_str, strlen(post_str));
+
+    free(post_str);
+
+    return ESP_OK;
 }

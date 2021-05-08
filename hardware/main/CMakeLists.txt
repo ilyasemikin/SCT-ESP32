@@ -6,10 +6,9 @@ idf_component_register(
 file(MAKE_DIRECTORY ../spiffs_image)
 file(
     COPY
-    ${CMAKE_SOURCE_DIR}/../software/graph.js
     ${CMAKE_SOURCE_DIR}/../software/index.html
     ${CMAKE_SOURCE_DIR}/../software/points.js
-    ${CMAKE_SOURCE_DIR}/../software/style.css
+    ${CMAKE_SOURCE_DIR}/../software/chart.min.js
 
     DESTINATION ${CMAKE_SOURCE_DIR}/spiffs_image
 )

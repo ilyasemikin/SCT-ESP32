@@ -11,6 +11,7 @@
 
 struct metering {
     double ampere;
+    double metering_volt;
     double volt;
 };
 
@@ -18,5 +19,7 @@ void init_metering_system();
 
 struct metering get_metering(uint8_t raise_ch, uint8_t input_ch, uint8_t dac_value);
 cJSON *get_metering_json_object(struct metering metering);
+
+int32_t get_dac_raw(double volt);
 
 #endif

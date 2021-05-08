@@ -29,11 +29,13 @@ void app_main(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    
+
     init_metering_system();
 
     spiffs_init(MAX_FILES_AMOUNT);
 
     wifi_softap_init();
+    // wifi_station_init();
+
     webserver_start();
 }

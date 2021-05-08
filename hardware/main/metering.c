@@ -18,7 +18,7 @@ static void raise_first_channel(uint8_t dac_value);
 static void raise_second_channel(uint8_t dac_value);
 static void raise_third_channel(uint8_t dac_value);
 
-static void pull_down(uint8_t gpio);
+void pull_down(uint8_t gpio);
 
 static uint32_t adc_get_value(adc_channel_t channel, uint32_t repeats);
 
@@ -28,13 +28,13 @@ static struct metering raw_to_metering(uint8_t dac_value, uint32_t adc_value, do
 
 void init_metering_system() {
     ESP_ERROR_CHECK(adc1_config_width(ADC_WIDTH_BIT_12));
-    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_CHANNEL_4, ADC_ATTEN_DB_0));
-    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_CHANNEL_6, ADC_ATTEN_DB_0));
-    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_CHANNEL_7, ADC_ATTEN_DB_0));
+
+    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_CHANNEL_4, ADC_ATTEN_DB_11));
+    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_CHANNEL_6, ADC_ATTEN_DB_11));
+    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC_CHANNEL_7, ADC_ATTEN_DB_11));
 
     adc_chars_channel = calloc(1, sizeof(esp_adc_cal_characteristics_t));
-
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_0, ADC_WIDTH_BIT_12, DEFAULT_VREF, adc_chars_channel);
+    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, DEFAULT_VREF, adc_chars_channel);
 
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_8_BIT,
@@ -99,6 +99,10 @@ cJSON *get_metering_json_object(struct metering metering) {
     return object;
 }
 
+int32_t get_dac_raw(double volt) {
+    return (int32_t)(255 * volt / 3.3);
+}
+
 // static function implementation
 
 void raise_first_channel(uint8_t dac_value) {
@@ -139,9 +143,11 @@ void raise_third_channel(uint8_t dac_value) {
 }
 
 void pull_down(uint8_t gpio) {
-    gpio_reset_pin(CHANNEL_GND_1);
-    gpio_reset_pin(CHANNEL_GND_2);
-    gpio_reset_pin(CHANNEL_GND_3);
+    gpio_reset_pin(CHANNEL_1_GND);
+    gpio_reset_pin(CHANNEL_2_GND);
+    gpio_reset_pin(CHANNEL_3_GND);
+
+    vTaskDelay(1);
 
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -167,8 +173,9 @@ struct metering raw_to_metering(uint8_t dac_value, uint32_t adc_value, double om
     struct metering result;
 
     double input_volt = 3.3 * ((double)dac_value / 255);
-    double out_volt = ((double)adc_value / 4096);
+    double out_volt = (double)adc_value / 1000;
 
+    result.metering_volt = out_volt;
     result.ampere = out_volt / oms;
     result.volt = input_volt;
 
