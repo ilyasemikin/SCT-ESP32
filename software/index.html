@@ -1,16 +1,75 @@
+<!DOCTYPE html>
 <html>
     <head>
-        <title>Graph page</title>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="style.css"></link>
+        <script src="chart.min.js"></script>
+
+        <title>SCT</title>
     </head>
+
     <body>
-        <div id="graph-container">
-            <h1>Graph</h1>
-            <canvas width="500" height="500" id="graph"></canvas>
-            <p><input type="button" value="update" id="update_btn"></input></p>
+        <div class="tabsLinks">
+            <button class="tabLink" onclick="openTab(event, 'graphAuto')">Auto mode</button>
+            <button class="tabLink" onclick="openTab(event, 'graphManual')">Manual mode</button>
+            <button class="tabLink" onclick="openTab(event, 'settings')" id="defaultOpen">Settings</button>
+        </div>
+
+        <div class="tabsContent">
+            <div class="tab" id="graphAuto">
+                <h3>Auto mode</h3>
+            </div>
+            
+            <div class="tab" id="graphManual">
+                <h3>Manual</h3>
+                
+                <canvas id="manualGraph"></canvas>
+                
+                <select id="raiseChannel">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                </select>
+                <select id="inputChannel">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                </select>
+                <button onclick="measure()">measure</button>
+
+                <select id="measurements" size="10"></select>
+                
+                <button>show</button>
+                <button>import</button>
+                <button>export</button>
+            </div>
+
+            <div class="tab" id="settings">
+                <h3>Settings</h3>
+                <span>Wireless</span>
+                <table>
+                    <tr>
+                        <td><i>SSID</i></td>
+                        <td><i>Password</i></td>
+                    </tr>
+                    <tr>
+                        <td><input id="wlan_ssid"></input></td>
+                        <td><input id="wlan_password" type="password"></input></td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="2"><button onclick="reconnect()">Reconnect</button></td>
+                    </tr>
+                    <tr>
+                        <td><i>IP</i></td>
+                    </tr>
+                    <tr>
+                        <td><input id="wlan_ip" readonly="readonly"></input></td>
+                    </tr>
+                </table>
+            </div>
         </div>
     </body>
 
-    <script type="text/javascript" src="graph.js"></script>
-    <script type="text/javascript" src="points.js"></script>
+    <script src="manual.js"></script>
+    <script src="settings.js"></script>
+    <script src="main.js"></script>
 </html>

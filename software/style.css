@@ -1,8 +1,54 @@
-#graph-container {
-    width: 100%;
-    text-align: center;
+body {
+    margin: 0;
+    height: 100%;
 }
 
-#graph {
-    border: 1px solid black;
+.tabsLinks {
+    float: left;
+    width: 150px;
+    border: 1px solid #ccc;
+    height: 100%;
+    background-color: #f1f1f1;
+    position: fixed;
+}
+
+.tabsLinks button {
+    display: block;
+    background-color: inherit;
+    padding: 5px;
+    color: black;
+    width: 100%;
+    border: none;
+    outline: none;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.5s;
+}
+
+.tabsLinks button:hover {
+    background-color: #ddd;
+}
+
+.tabsLinks button.active {
+    background-color: #ccc;
+}
+
+.tabsContent {
+    float: left;
+    margin-left: 152px;
+    flex-shrink: 1;
+    padding: 10px;
+    width: calc(100% - 152px - 20px - 2px);
+}
+
+.tab {
+    display: none;
+}
+
+#graphManual button {
+    margin: 5px 0;
+}
+
+#measurements {
+    width: 100%
 }
