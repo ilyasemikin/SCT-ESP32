@@ -18,6 +18,8 @@ static void raise_first_channel(uint8_t dac_value);
 static void raise_second_channel(uint8_t dac_value);
 static void raise_third_channel(uint8_t dac_value);
 
+static void reset_channels();
+
 void pull_down(uint8_t gpio);
 
 static uint32_t adc_get_value(adc_channel_t channel, uint32_t repeats);
@@ -84,6 +86,8 @@ struct metering get_metering(uint8_t raise_ch, uint8_t input_ch, uint8_t dac_val
         break;
     }
 
+    reset_channels();
+
     return raw_to_metering(dac_value, adc_value, DEFAULT_RESISTOR_OM);
 }
 
@@ -140,6 +144,12 @@ void raise_third_channel(uint8_t dac_value) {
 
     ledc_set_duty(ledc_channel_cfg.speed_mode, ledc_channel_cfg.channel, dac_value);
     ledc_update_duty(ledc_channel_cfg.speed_mode, ledc_channel_cfg.channel);
+}
+
+static void reset_channels() {
+    gpio_reset_pin(CHANNEL_1_GND);
+    gpio_reset_pin(CHANNEL_2_GND);
+    gpio_reset_pin(CHANNEL_3_GND);
 }
 
 void pull_down(uint8_t gpio) {

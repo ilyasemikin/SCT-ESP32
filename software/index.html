@@ -3,24 +3,29 @@
     <head>
         <link rel="stylesheet" href="style.css"></link>
         <script src="chart.min.js"></script>
+        <meta charset="utf-8">
 
         <title>SCT</title>
     </head>
 
     <body>
         <div class="tabsLinks">
-            <button class="tabLink" onclick="openTab(event, 'graphAuto')">Auto mode</button>
-            <button class="tabLink" onclick="openTab(event, 'graphManual')">Manual mode</button>
-            <button class="tabLink" onclick="openTab(event, 'settings')" id="defaultOpen">Settings</button>
+            <button class="tabLink lng-auto_mode_but" onclick="openTab(event, 'graphAuto')">Auto mode</button>
+            <button class="tabLink lng-manual_mode_but" onclick="openTab(event, 'graphManual')">Manual mode</button>
+            <button class="tabLink lng-settings_but" onclick="openTab(event, 'settings')" id="defaultOpen">Settings</button>
+            <select class="change-lang">
+                <option value="en" selected>EN</option>
+                <option value="ru">RU</option>
+            </select>
         </div>
 
         <div class="tabsContent">
             <div class="tab" id="graphAuto">
-                <h3>Auto mode</h3>
+                <h3 class="lng-auto_mode">Auto mode</h3>
             </div>
             
             <div class="tab" id="graphManual">
-                <h3>Manual</h3>
+                <h3 class="lng-manual_mode">Manual mode</h3>
                 
                 <canvas id="manualGraph"></canvas>
                 
@@ -34,42 +39,48 @@
                     <option>2</option>
                     <option>3</option>
                 </select>
-                <button onclick="measure()">measure</button>
+                <button class="lng-measure" onclick="measure()">measure</button>
 
                 <select id="measurements" size="10"></select>
                 
-                <button>show</button>
-                <button>import</button>
-                <button>export</button>
+                <button class="lng-show">show</button>
+                <button class="lng-import">import</button>
+                <button class="lng-export">export</button>
             </div>
 
             <div class="tab" id="settings">
-                <h3>Settings</h3>
-                <span>Wireless</span>
+                <h3 class="lng-settings">Settings</h3>
+                <span class="lng-wireless">Wireless</span>
                 <table>
                     <tr>
-                        <td><i>SSID</i></td>
-                        <td><i>Password</i></td>
+                        <td><i class="lng-ssid">SSID</i></td>
+                        <td><i class="lng-password">Password</i></td>
                     </tr>
                     <tr>
                         <td><input id="wlan_ssid"></input></td>
                         <td><input id="wlan_password" type="password"></input></td>
                     </tr>
                     <tr>
-                        <td align="right" colspan="2"><button onclick="reconnect()">Reconnect</button></td>
+                        <td align="right" colspan="2"><button class="lng-reconnect" onclick="reconnect()">Reconnect</button></td>
                     </tr>
                     <tr>
-                        <td><i>IP</i></td>
+                        <td><i class="lng-ip">ip</i></td>
                     </tr>
                     <tr>
                         <td><input id="wlan_ip" readonly="readonly"></input></td>
                     </tr>
                 </table>
+                <hr>
+
+
             </div>
+
         </div>
     </body>
 
-    <script src="manual.js"></script>
-    <script src="settings.js"></script>
-    <script src="main.js"></script>
+    <script type="text/javascript" src="languages.js"></script>
+    <script type="text/javascript" src="manual.js"></script>
+    <script type="text/javascript" src="settings.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+    
 </html>

@@ -11,15 +11,18 @@
 #include "filesystem.h"
 #include "list.h"
 #include "metering.h"
+#include "wifi.h"
 
 static httpd_handle_t server = NULL;
 
 // static functions definition
 static void webserver_init_spiffs_files(void);
+static esp_err_t set_content_type_from_file(httpd_req_t *req, const char * filename);
 // handlers definition
 static esp_err_t get_file_handler(httpd_req_t *req);
 static esp_err_t get_metering_handler(httpd_req_t *req);
 static esp_err_t get_channel_test(httpd_req_t *req);
+static esp_err_t get_device_info(httpd_req_t *req);
 
 const static httpd_uri_t metering_get = {
     .uri = "/metering",
@@ -35,6 +38,13 @@ const static httpd_uri_t channel_test_get = {
     .user_ctx = NULL
 };
 
+const static httpd_uri_t device_info_get = {
+    .uri = "/device_info",
+    .method = HTTP_GET,
+    .handler = get_device_info,
+    .user_ctx = NULL
+};
+
 const static httpd_uri_t main_page_get = {
     .uri = "/",
     .method = HTTP_GET,
@@ -45,7 +55,7 @@ const static httpd_uri_t main_page_get = {
 void webserver_start(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     // TODO: избавиться от константы
-    config.max_uri_handlers = 10;
+    config.max_uri_handlers = 20;
 
     if (httpd_start(&server, &config) == ESP_OK) {
         webserver_init_spiffs_files();
@@ -53,6 +63,7 @@ void webserver_start(void) {
         ESP_ERROR_CHECK(httpd_register_uri_handler(server, &metering_get));
         ESP_ERROR_CHECK(httpd_register_uri_handler(server, &main_page_get));
         ESP_ERROR_CHECK(httpd_register_uri_handler(server, &channel_test_get));
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &device_info_get));
     }
 }
 
@@ -78,14 +89,37 @@ void webserver_init_spiffs_files(void) {
     list_free(list);
 }
 
+esp_err_t set_content_type_from_file(httpd_req_t *req, const char * filename) {
+    const char *ext = get_extension(filename);
+
+    if (ext == NULL) {
+        return ESP_FAIL;
+    }
+
+    if (!strcmp(ext, ".html")) {
+        return httpd_resp_set_type(req, "text/html");
+    }
+    else if (!strcmp(ext, ".css")) {
+        return httpd_resp_set_type(req, "text/css");
+    }
+    else if (!strcmp(ext, ".js")) {
+        return httpd_resp_set_type(req, "application/javascript");
+    }
+
+    return httpd_resp_set_type(req, "text/plain");
+}
+
 // handlers implementation
 
 esp_err_t get_file_handler(httpd_req_t *req) {
-    FILE *fd = fopen(req->user_ctx, "r");
+    const char *filename = req->user_ctx;
+    FILE *fd = fopen(filename, "r");
     if (fd == NULL) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
         return ESP_FAIL;
     }
+
+    set_content_type_from_file(req, filename);
 
     char *chunk = (char *)malloc(sizeof(char) * SCRATCH_BUFSIZE);
     size_t chunksize;
@@ -95,6 +129,7 @@ esp_err_t get_file_handler(httpd_req_t *req) {
         if (chunksize > 0) {
             if (httpd_resp_send_chunk(req, chunk, chunksize) != ESP_OK) {
                 fclose(fd);
+                free(chunk);
                 httpd_resp_sendstr_chunk(req, NULL);
                 httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
                 return ESP_FAIL;
@@ -102,7 +137,9 @@ esp_err_t get_file_handler(httpd_req_t *req) {
         }
     } while (chunksize != 0);
 
+    free(chunk);
     fclose(fd);
+
     httpd_resp_send_chunk(req, NULL, 0);
 
     return ESP_OK;
@@ -114,6 +151,7 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
     char *ptr;
     double from = 0;
     double to = 3;
+    double step = 0.1;
     char param[128];
     if (httpd_req_get_url_query_str(req, param, sizeof(param) / sizeof(char)) == ESP_OK) {
         char buf[16];
@@ -122,7 +160,7 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
             channel_in = atoi(buf);
         }
 
-        if (httpd_query_key_value(param, "out", buf, buf_len) == ESP_OK) {
+        if (httpd_query_key_value(param, "raise", buf, buf_len) == ESP_OK) {
             channel_out = atoi(buf);
         }
 
@@ -133,6 +171,10 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
         if (httpd_query_key_value(param, "to", buf, buf_len) == ESP_OK) {
             to = strtod(buf, &ptr);
         }
+
+        if (httpd_query_key_value(param, "step", buf, buf_len) == ESP_OK) {
+            step = strtod(buf, &ptr);
+        }
     }
     else {
         httpd_resp_send_500(req);
@@ -141,12 +183,13 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
 
     int16_t dac_from = get_dac_raw(from);
     int16_t dac_to = get_dac_raw(to);
+    int16_t dac_step = get_dac_raw(step);
 
     printf("%d %d\n", dac_from, dac_to);
 
     cJSON *array = cJSON_CreateArray();
     struct metering metering;
-    for (int16_t value = dac_from; value < dac_to; value += 10) {
+    for (int16_t value = dac_from; value < dac_to; value += dac_step) {
         if (value >= 0) {
             metering = get_metering(channel_out, channel_in, (uint8_t)value);
         }
@@ -221,5 +264,29 @@ esp_err_t get_channel_test(httpd_req_t *req) {
 
     free(post_str);
 
+    return ESP_OK;
+}
+
+esp_err_t get_device_info(httpd_req_t *req) {
+    const struct current_station_info *station_info = get_current_station_info();
+
+    cJSON *object = cJSON_CreateObject();
+
+    cJSON *ssid = cJSON_CreateString(station_info->ssid);
+    cJSON *ip = cJSON_CreateString(station_info->ip);
+    cJSON *resistor = cJSON_CreateNumber(DEFAULT_RESISTOR_OM);
+
+    cJSON_AddItemToObject(object, "ssid", ssid);
+    cJSON_AddItemToObject(object, "ip", ip);
+    cJSON_AddItemToObject(object, "resistor", resistor);
+
+    char *post_str = cJSON_Print(object);
+    cJSON_Delete(object);
+
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_send(req, post_str, strlen(post_str));
+
+    free(post_str);
+    
     return ESP_OK;
 }

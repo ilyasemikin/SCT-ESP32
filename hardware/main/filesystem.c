@@ -57,3 +57,19 @@ struct list *spiffs_list_files(void) {
 
     return list;
 }
+
+const char *get_extension(const char *fname) {
+    const char *res = NULL;
+    
+    if (fname == NULL) {
+        return res;
+    }
+
+    while (*fname != '\0') {
+        if (*fname == '.') {
+            res = fname;
+        }
+        fname++;
+    }
+    return res;
+}

@@ -34,8 +34,8 @@ void app_main(void) {
 
     spiffs_init(MAX_FILES_AMOUNT);
 
-    wifi_softap_init();
-    // wifi_station_init();
+    wifi_init();
+    wifi_station_config(WIFI_STATION_SSID, WIFI_STATION_PASSWORD);
 
     webserver_start();
 }

@@ -10,4 +10,6 @@ void spiffs_init(size_t max_files);
 
 struct list *spiffs_list_files(void);
 
+const char *get_extension(const char *fname);
+
 #endif
