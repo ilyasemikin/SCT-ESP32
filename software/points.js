@@ -17,7 +17,7 @@ function updateGraph(points) {
             }]
         },
         options: {
-            responsive: true
+            responsive: true,
         }
     });
 }
