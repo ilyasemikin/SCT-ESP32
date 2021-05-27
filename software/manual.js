@@ -19,12 +19,18 @@ function initManualGraph() {
                     text: 'Amperes',
                     color: '#911',
                     font: {
-                        family: 'Comic Sans MS',
+                        family: 'Roboto',
                         size: 20,
                         weight: 'bold',
                         lineHeight: 1.2,
                     },
                 },
+                ticks: {
+                    textStrokeWidth: 3,
+                    callback: function(value) {
+                        return value.toPrecision(6);//задача точности числа
+                    }
+                }
             },
             x: {
                 //type: 'linear',
@@ -34,7 +40,7 @@ function initManualGraph() {
                     text: 'Volts',
                     color: '#911',
                     font: {
-                        family: 'Comic Sans MS',
+                        family: 'Roboto',
                         size: 20,
                         weight: 'bold',
                         lineHeight: 1.2,
@@ -68,7 +74,7 @@ function showMeasurement(name, index) {
     let points = measurements[index].measure;
 
     let dataset = {
-        label: name,
+        label: 'Измерение ' + name,
         data: points,
         borderColor: "red",
         fill: false,
