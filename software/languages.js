@@ -35,6 +35,10 @@
       "ru": "Показать",
       "en": "Show",
     },
+    "remove": {
+      "ru": "Удалить",
+      "en": "Remove"
+    },
     "import" : {
       "ru": "Импорт",
       "en": "Import",
