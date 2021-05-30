@@ -16,7 +16,7 @@ function initManualGraph() {
                 display: true,
                 title: {
                     display: true,
-                    text: 'Amperes',
+                    text: 'Current',
                     color: '#911',
                     font: {
                         family: 'Roboto',
@@ -29,6 +29,7 @@ function initManualGraph() {
                     textStrokeWidth: 3,
                     callback: function(value) {
                         return value.toPrecision(6);//задача точности числа
+                        //return (parseFloat(value) * 1000000).toPrecision(3);
                     }
                 }
             },
@@ -37,7 +38,7 @@ function initManualGraph() {
                 display: true,
                 title: {
                     display: true,
-                    text: 'Volts',
+                    text: 'Voltage',
                     color: '#911',
                     font: {
                         family: 'Roboto',
@@ -74,7 +75,7 @@ function showMeasurement(name, index) {
     let points = measurements[index].measure;
 
     let dataset = {
-        label: 'Измерение ' + name,
+        label: 'Измерение ' + Number(name + 1),
         data: points,
         borderColor: "red",
         fill: false,
@@ -152,7 +153,7 @@ function addMeasureToList(index) {
     let opt = document.createElement("option");
     opt.value = index;
     opt.id = `listMeasure${index}`
-    opt.innerHTML = `Измерение ${index}`;
+    opt.innerHTML = `Измерение ${index + 1}`;
 
     select.appendChild(opt);
 }
