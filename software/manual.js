@@ -2,6 +2,29 @@ let graphManualChart;
 let measurements = {};
 let curMeasureIndex = 0;
 
+let refMeasurements = [
+    {
+        from: 0.28, to: 0.35,
+        name: "Zener diode",
+        desc: "1N4728A"
+    },
+    {
+        from: 0, to: 0.07,
+        name: "Resistor",
+        desc: "None"
+    },
+    {
+        from: 0.89, to: 0.93,
+        name: "Diode",
+        desc: "2Д202Р"
+    },
+    {
+        from: 0.70, to: 0.8,
+        name: "Diode",
+        desc: "2Д103А "
+    }
+]
+
 function initManualGraph() {
     let options = {
         scales: {
@@ -16,7 +39,7 @@ function initManualGraph() {
                 display: true,
                 title: {
                     display: true,
-                    text: 'Current',
+                    text: 'Current, mA',
                     color: '#911',
                     font: {
                         family: 'Roboto',
@@ -28,8 +51,7 @@ function initManualGraph() {
                 ticks: {
                     textStrokeWidth: 3,
                     callback: function(value) {
-                        return value.toPrecision(6);//задача точности числа
-                        //return (parseFloat(value) * 1000000).toPrecision(3);
+                        return value.toPrecision(2);
                     }
                 }
             },
@@ -38,7 +60,7 @@ function initManualGraph() {
                 display: true,
                 title: {
                     display: true,
-                    text: 'Voltage',
+                    text: 'Voltage, V',
                     color: '#911',
                     font: {
                         family: 'Roboto',
@@ -72,7 +94,7 @@ function showMeasurement(name, index) {
         return;
     }
 
-    let points = measurements[index].measure;
+    let points = measurements[index].measure.map(p => ({ x: p.x, y: p.y * 1000 }));
 
     let dataset = {
         label: 'Измерение ' + Number(name + 1),
@@ -122,6 +144,14 @@ function tryRemoveMeasurement() {
 function saveMeasurement(measure) {
     let index = curMeasureIndex;
 
+    let z_more = 0;
+    for (let i = 0; i < measure.length; i++) {
+        if (Math.abs(measure[i].y) < 0.000003) {
+            z_more++;
+        }
+    }
+    detectItem(z_more / measure.length)
+
     measurements[curMeasureIndex] = {
         measure: measure,
         time: Date.now()
@@ -167,7 +197,7 @@ function deleteMeasureList(index) {
 function getRandomData(amount = 3) {
     return [...Array(amount).keys()]
         .map(i => ({
-            ampere: Math.random() * 3,
+            ampere: Math.random() / 1000,
             volt: i
         }));
 }
@@ -199,11 +229,37 @@ function exportMeasurements() {
     download(json, "measurements.json", "text/plain");
 }
 
+async function detectItem(zeroValue) {
+    let str = "Unknown";
+    let desc = "None"
+    for (let i = 0; i < refMeasurements.length; i++) {
+        if (refMeasurements[i].from <= zeroValue && zeroValue <= refMeasurements[i].to) {
+            str = refMeasurements[i].name;
+            desc = refMeasurements[i].desc;
+            break;
+        }
+    }
+
+    let p = document.getElementById("calcItemName");
+    p.innerHTML = str;
+
+    await new Promise(resolve => setTimeout(resolve, ((Math.random() * 5).toFixed() + 3) * 1000));   
+    let pDesc = document.getElementById("calcItemDesc");
+    pDesc.innerHTML = desc;
+    alert("Loaded");
+}
+
+async function calibrate() {
+    await fetch("/channel_test?in=1&raise=1&value=0")
+        .then(_ => alert("Calibrate done"))
+        .catch(_ => console.log(`Error ${e}`));
+}
+
 async function measure() {
     let input = document.getElementById("inputChannel");
     let raise = document.getElementById("raiseChannel");
 
-    let data = await fetch(`http://192.168.4.1/metering?in=${input.value}&raise=${raise.value}&from=-3&to=3&step=0.1`)
+    let data = await fetch(`/metering?in=${input.value}&raise=${raise.value}&from=-3.3&to=3.3&step=0.1`)
         .then(body => body.json())
         .catch(e => console.log(`Error: ${e}`));
     // let data = getRandomData(10);

@@ -4,10 +4,14 @@ async function loadSettings() {
             .then(json => {
                 let ssidInput = document.getElementById("wlan_ssid");
                 let ipInput = document.getElementById("wlan_ip");
+                let resistorInput = document.getElementById("resistor_value");
+                let zeroInput = document.getElementById("zero_compensation");
                 ssidInput.value = json.ssid;
                 ipInput.value = json.ip;
+                resistorInput.value = json.resistor + " om";
+                zeroInput.value = json.zero_compensation.toPrecision(1);
             }))
-        .catch(x => console.log(e => `Error ${e}`));
+        .catch(_ => console.log(e => `Error ${e}`));
 }
 
 async function reconnect() {
@@ -21,7 +25,7 @@ async function reconnect() {
         return;
     }
 
-    await fetch(`http://192.168.0.140/reconnect?ssid=${ssid}&${password}`)
+    await fetch(`/reconnect?ssid=${ssid}&${password}`)
         .then()
         .catch(e => console.log(`Error ${e}`));
 }

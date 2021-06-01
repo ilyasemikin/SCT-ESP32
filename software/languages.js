@@ -3,6 +3,10 @@
       "ru": "Характериограф",
       "en": "SCT",
     },
+    "calcItem": {
+      "ru": "Последний элемент",
+      "en": "Last item"
+    },
     "auto_mode" : {
       "ru": "Автоматический режим",
       "en": "Auto mode",
@@ -46,6 +50,10 @@
     "export" : {
       "ru": "Экспорт",
       "en": "Export",
+    },
+    "measurePanel": {
+      "ru": "Измерения",
+      "en": "Measurements"
     },
     "measure" : {
       "ru": "Измерить",

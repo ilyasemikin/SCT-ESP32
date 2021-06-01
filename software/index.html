@@ -29,6 +29,13 @@
                 
                 <canvas id="manualGraph"></canvas>
                 
+                <div id="calcItem">
+                    <h3 class="lng-calcItem"></h3>
+                    <p id="calcItemName">Unknown</p>
+                    <p id="calcItemDesc"></p>
+                </div>
+
+                <h3 class="lng-measurePanel"></h3>
                 <select id="raiseChannel">
                     <option>1</option>
                     <option>2</option>
@@ -40,6 +47,7 @@
                     <option>3</option>
                 </select>
                 <button class="lng-measure" onclick="measure()">measure</button>
+                <button onclick="calibrate()">Calibrate</button>
 
                 <select id="measurements" size="10"></select>
                 
@@ -70,6 +78,18 @@
                     </tr>
                     <tr>
                         <td><input id="wlan_ip" readonly="readonly"></input></td>
+                    </tr>
+                    <tr>
+                        <td><i>Resistor</i></td>
+                    </tr>
+                    <tr>
+                        <td><input id="resistor_value" readonly="readonly"></input></td>
+                    </tr>
+                    <tr>
+                        <td><i>Zero compensation</i></td>
+                    </tr>
+                    <tr>
+                        <td><input id="zero_compensation" readonly="readonly"></input></td>
                     </tr>
                 </table>
                 <hr>
