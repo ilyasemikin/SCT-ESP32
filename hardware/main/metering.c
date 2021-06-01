@@ -150,6 +150,10 @@ static void reset_channels() {
     gpio_reset_pin(CHANNEL_1_GND);
     gpio_reset_pin(CHANNEL_2_GND);
     gpio_reset_pin(CHANNEL_3_GND);
+
+    raise_first_channel(0);
+    raise_second_channel(0);
+    raise_third_channel(0);
 }
 
 void pull_down(uint8_t gpio) {

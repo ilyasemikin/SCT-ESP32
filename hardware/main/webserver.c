@@ -14,6 +14,7 @@
 #include "wifi.h"
 
 static httpd_handle_t server = NULL;
+static double zero_compensation_ampere = 0;
 
 // static functions definition
 static void webserver_init_spiffs_files(void);
@@ -192,9 +193,12 @@ esp_err_t get_metering_handler(httpd_req_t *req) {
     for (int16_t value = dac_from; value < dac_to; value += dac_step) {
         if (value >= 0) {
             metering = get_metering(channel_out, channel_in, (uint8_t)value);
+            metering.ampere = metering.ampere - zero_compensation_ampere;
         }
         else {
             metering = get_metering(channel_in, channel_out, (uint8_t)-value);
+            metering.ampere = metering.ampere - zero_compensation_ampere;
+
             metering.volt = -metering.volt;
             metering.ampere = -metering.ampere;
         }
@@ -250,6 +254,13 @@ esp_err_t get_channel_test(httpd_req_t *req) {
     cJSON *raise_ch = cJSON_CreateNumber(channel_raise);
     cJSON *input_ch = cJSON_CreateNumber(channel_metering);
 
+    if (channel_raise == channel_metering && value == 0) {
+        cJSON *z_compens = cJSON_CreateBool(true);
+        zero_compensation_ampere = metering.ampere;
+        metering.ampere = 0;
+        cJSON_AddItemToObject(object, "zero_compensation", z_compens);
+    }
+
     cJSON_AddItemToObject(object, "channel_raise", raise_ch);
     cJSON_AddItemToObject(object, "channel_metering", input_ch);
     cJSON_AddItemToObject(object, "volt", volt);
@@ -275,10 +286,12 @@ esp_err_t get_device_info(httpd_req_t *req) {
     cJSON *ssid = cJSON_CreateString(station_info->ssid);
     cJSON *ip = cJSON_CreateString(station_info->ip);
     cJSON *resistor = cJSON_CreateNumber(DEFAULT_RESISTOR_OM);
+    cJSON *z_compens = cJSON_CreateNumber(zero_compensation_ampere);
 
     cJSON_AddItemToObject(object, "ssid", ssid);
     cJSON_AddItemToObject(object, "ip", ip);
     cJSON_AddItemToObject(object, "resistor", resistor);
+    cJSON_AddItemToObject(object, "zero_compensation", z_compens);
 
     char *post_str = cJSON_Print(object);
     cJSON_Delete(object);
