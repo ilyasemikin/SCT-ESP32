@@ -1,29 +1,30 @@
 let graphManualChart;
 let measurements = {};
 let curMeasureIndex = 0;
+let i = 0;
 
-let refMeasurements = [
-    {
-        from: 0.28, to: 0.35,
-        name: "Zener diode",
-        desc: "1N4728A"
-    },
-    {
-        from: 0, to: 0.07,
-        name: "Resistor",
-        desc: "None"
-    },
-    {
-        from: 0.89, to: 0.93,
-        name: "Diode",
-        desc: "2Д202Р"
-    },
-    {
-        from: 0.70, to: 0.8,
-        name: "Diode",
-        desc: "2Д103А "
-    }
-]
+// let refMeasurements = [
+//     {
+//         from: 0.28, to: 0.35,
+//         name: "Zener diode",
+//         desc: "1N4728A"
+//     },
+//     {
+//         from: 0, to: 0.07,
+//         name: "Resistor",
+//         desc: "None"
+//     },
+//     {
+//         from: 0.89, to: 0.93,
+//         name: "Diode",
+//         desc: "2Д202Р"
+//     },
+//     {
+//         from: 0.70, to: 0.8,
+//         name: "Diode",
+//         desc: "2Д103А "
+//     }
+// ]
 
 function initManualGraph() {
     let options = {
@@ -37,9 +38,12 @@ function initManualGraph() {
             y: {
                 //type: 'linear',
                 display: true,
+                
                 title: {
+                    align: 'end',
+                    position: 'right',
                     display: true,
-                    text: 'Current, mA',
+                    text: 'mA',
                     color: '#911',
                     font: {
                         family: 'Roboto',
@@ -57,10 +61,12 @@ function initManualGraph() {
             },
             x: {
                 //type: 'linear',
+                
                 display: true,
                 title: {
+                    align: 'end',
                     display: true,
-                    text: 'Voltage, V',
+                    text: 'V',
                     color: '#911',
                     font: {
                         family: 'Roboto',
@@ -85,6 +91,19 @@ function initManualGraph() {
     );
 }
 
+function randomNumber(min, max) { 
+    return Math.floor(Math.random() * (max - min) + min);;
+} 
+
+function borderColors() {
+    let r = randomNumber(0, 255);
+    let g = randomNumber(0, 255);
+    let b = randomNumber(0, 255);
+    let result = 'rgba(' + r + ',' + g + ',' + b + ',' + 0.8 + ')';
+    console.log(result);
+    return result;
+}
+
 function showMeasurement(name, index) {
     if (measurements[index] == undefined) {
         return;
@@ -95,11 +114,12 @@ function showMeasurement(name, index) {
     }
 
     let points = measurements[index].measure.map(p => ({ x: p.x, y: p.y * 1000 }));
-
+    i++;
     let dataset = {
-        label: 'Измерение ' + Number(name + 1),
+        label: `Измерение ${i}`,
         data: points,
-        borderColor: "red",
+        //borderColor: "red",
+        borderColor: borderColors(),
         fill: false,
         mIndex: index
     }
@@ -150,7 +170,7 @@ function saveMeasurement(measure) {
             z_more++;
         }
     }
-    detectItem(z_more / measure.length)
+    //detectItem(z_more / measure.length)
 
     measurements[curMeasureIndex] = {
         measure: measure,
@@ -229,25 +249,25 @@ function exportMeasurements() {
     download(json, "measurements.json", "text/plain");
 }
 
-async function detectItem(zeroValue) {
-    let str = "Unknown";
-    let desc = "None"
-    for (let i = 0; i < refMeasurements.length; i++) {
-        if (refMeasurements[i].from <= zeroValue && zeroValue <= refMeasurements[i].to) {
-            str = refMeasurements[i].name;
-            desc = refMeasurements[i].desc;
-            break;
-        }
-    }
+// async function detectItem(zeroValue) {
+//     let str = "Unknown";
+//     let desc = "None"
+//     for (let i = 0; i < refMeasurements.length; i++) {
+//         if (refMeasurements[i].from <= zeroValue && zeroValue <= refMeasurements[i].to) {
+//             str = refMeasurements[i].name;
+//             desc = refMeasurements[i].desc;
+//             break;
+//         }
+//     }
 
-    let p = document.getElementById("calcItemName");
-    p.innerHTML = str;
+//     let p = document.getElementById("calcItemName");
+//     p.innerHTML = str;
 
-    await new Promise(resolve => setTimeout(resolve, ((Math.random() * 5).toFixed() + 3) * 1000));   
-    let pDesc = document.getElementById("calcItemDesc");
-    pDesc.innerHTML = desc;
-    alert("Loaded");
-}
+//     await new Promise(resolve => setTimeout(resolve, ((Math.random() * 5).toFixed() + 3) * 1000));   
+//     let pDesc = document.getElementById("calcItemDesc");
+//     pDesc.innerHTML = desc;
+//     alert("Loaded");
+// }
 
 async function calibrate() {
     await fetch("/channel_test?in=1&raise=1&value=0")
